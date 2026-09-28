@@ -2,13 +2,16 @@ import SwiftUI
 import ServiceManagement
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, notes, shelf, prompter
+    case home, media, tasks, notes, shelf, focus, prompter
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
         case .home: "house.fill"
+        case .media: "music.note"
+        case .tasks: "checklist"
+        case .focus: "timer"
         case .notes: "note.text"
         case .shelf: "tray.full.fill"
         case .prompter: "text.aligncenter"
@@ -18,6 +21,9 @@ enum NotchTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home: "Home"
+        case .media: "Music"
+        case .tasks: "Tasks"
+        case .focus: "Focus Timer"
         case .notes: "Notes"
         case .shelf: "Shelf"
         case .prompter: "Teleprompter"
@@ -32,7 +38,10 @@ final class NotchViewModel: ObservableObject {
     @Published var prompterPlaying = false
     @Published var notchSize = CGSize(width: 190, height: 32)
 
-    let expandedSize = CGSize(width: 660, height: 270)
+    let expandedSize = CGSize(width: 720, height: 280)
+
+    /// Width of each side of the closed notch when showing a live countdown.
+    static let liveActivityEarWidth: CGFloat = 62
 
     var requestCollapse: () -> Void = {}
 

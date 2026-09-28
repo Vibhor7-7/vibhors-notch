@@ -3,9 +3,12 @@
 A personal Dynamic-Island-style app for the MacBook notch. Hover over the notch to open it.
 
 ## Tabs
-- **Home**: clock, date, battery, and calendar events for today and tomorrow
+- **Home**: clock, date, battery, and calendar events for today and tomorrow. Events with a Zoom, Meet, Teams or Webex link get a **Join** button, which turns green 10 minutes before the meeting starts.
+- **Music**: Spotify now playing, with album art, play/pause, previous/next, seek bar, shuffle, repeat and volume (via AppleScript)
+- **Tasks**: type a task and press Return, then tick the checkbox to complete it. Double-click a task to rename it. Completed tasks collapse into their own section.
 - **Notes**: create, edit and delete notes (autosaved)
 - **Shelf**: drop files to keep them handy, then drag them back out, double-click to open, or right-click for more options. Dragging a file onto the closed notch opens the shelf.
+- **Focus**: Pomodoro timer with adjustable focus and break lengths. While a session is running the countdown shows beside the closed notch, and when a session ends it plays a chime and briefly opens the notch.
 - **Teleprompter**: paste a script, press Start, and it scrolls right under the camera. Space plays or pauses, and you can drag the text to scrub. Speed and font size are adjustable.
 
 ## Behaviour

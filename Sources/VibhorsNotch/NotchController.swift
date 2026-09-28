@@ -17,12 +17,17 @@ final class NotchController {
     let shelf = ShelfStore()
     let calendar = CalendarStore()
     let battery = BatteryMonitor()
+    let spotify = SpotifyController()
+    let tasks = TaskStore()
+    let focus = FocusTimer()
 
     private let panel: NotchPanel
     private var screen: NSScreen?
     private var monitors: [Any] = []
     private var expandWork: DispatchWorkItem?
     private var collapseWork: DispatchWorkItem?
+    /// Keeps the notch open briefly after it pops open on its own (e.g. timer finished).
+    private var holdOpenUntil: Date?
 
     /// Extra transparent room around the expanded notch so its shadow isn't clipped.
     private let windowPadding = CGSize(width: 40, height: 30)
@@ -52,11 +57,15 @@ final class NotchController {
             .environmentObject(shelf)
             .environmentObject(calendar)
             .environmentObject(battery)
+            .environmentObject(spotify)
+            .environmentObject(tasks)
+            .environmentObject(focus)
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         panel.contentView = hosting
 
         vm.requestCollapse = { [weak self] in self?.collapse() }
+        focus.onPhaseComplete = { [weak self] _ in self?.popOpen(to: .focus) }
 
         layout()
         installMonitors()
@@ -92,8 +101,9 @@ final class NotchController {
     private var collapsedHitRect: NSRect {
         guard let s = screen else { return .zero }
         let n = vm.notchSize
-        return NSRect(x: s.frame.midX - n.width / 2 - 10, y: s.frame.maxY - n.height - 4,
-                      width: n.width + 20, height: n.height + 4)
+        let ears = focus.isActive ? NotchViewModel.liveActivityEarWidth : 0
+        return NSRect(x: s.frame.midX - n.width / 2 - ears - 10, y: s.frame.maxY - n.height - 4,
+                      width: n.width + ears * 2 + 20, height: n.height + 4)
     }
 
     private var expandedHitRect: NSRect {
@@ -105,7 +115,9 @@ final class NotchController {
 
     /// Keep the notch open while typing, pinned, or reading the teleprompter.
     private var shouldStayOpen: Bool {
-        vm.isPinned || vm.prompterPlaying || (panel.isKeyWindow && panel.firstResponder is NSTextView)
+        vm.isPinned || vm.prompterPlaying
+            || (panel.isKeyWindow && panel.firstResponder is NSTextView)
+            || (holdOpenUntil.map { Date() < $0 } ?? false)
     }
 
     // MARK: - Mouse / keyboard
@@ -196,6 +208,20 @@ final class NotchController {
         panel.ignoresMouseEvents = false
         withAnimation(.spring(response: 0.4, dampingFraction: 0.78)) {
             vm.isExpanded = true
+        }
+    }
+
+    /// Opens the notch without a hover, holds it for a few seconds, then lets it close.
+    func popOpen(to tab: NotchTab, for seconds: TimeInterval = 5) {
+        vm.tab = tab
+        holdOpenUntil = Date().addingTimeInterval(seconds)
+        expand()
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds + 0.1) { [weak self] in
+            guard let self else { return }
+            self.holdOpenUntil = nil
+            if !self.expandedHitRect.contains(NSEvent.mouseLocation), !self.shouldStayOpen {
+                self.collapse()
+            }
         }
     }
 

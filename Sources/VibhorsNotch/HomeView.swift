@@ -246,7 +246,28 @@ private struct EventRow: View {
                     .foregroundStyle(isNow ? Color.green : .secondary)
                     .lineLimit(1)
             }
+            Spacer(minLength: 4)
+            if let url = event.meetingURL {
+                Button {
+                    NSWorkspace.shared.open(url)
+                } label: {
+                    Label("Join", systemImage: "video.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .foregroundStyle(isJoinable ? Color.black : Color.white)
+                        .background(Capsule().fill(isJoinable ? Color.green : Color.white.opacity(0.1)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(url.absoluteString)
+            }
         }
+    }
+
+    /// In progress or starting within 10 minutes.
+    private var isJoinable: Bool {
+        !event.isAllDay && event.startDate.timeIntervalSinceNow < 600 && event.endDate > Date()
     }
 
     private var isNow: Bool {
@@ -266,5 +287,21 @@ private struct EventRow: View {
         if isNow { return "Now · until \(end)" }
         let start = event.startDate.formatted(date: .omitted, time: .shortened)
         return "\(day) · \(start) – \(end)"
+    }
+}
+
+extension EKEvent {
+    private static let meetingPattern =
+        #"https?://[^\s<>"']*(zoom\.us/(j|my|w|s)/|meet\.google\.com/[a-z]|teams\.microsoft\.com/l/meetup-join|teams\.live\.com/meet|webex\.com/|whereby\.com/|meet\.around\.co/|chime\.aws/)[^\s<>"']*"#
+
+    /// First Zoom / Meet / Teams / Webex link found in the event's URL, location or notes.
+    var meetingURL: URL? {
+        for text in [url?.absoluteString, location, notes].compactMap({ $0 }) {
+            if let range = text.range(of: Self.meetingPattern, options: [.regularExpression, .caseInsensitive]) {
+                let link = String(text[range]).trimmingCharacters(in: CharacterSet(charactersIn: ".,;)>]"))
+                if let url = URL(string: link) { return url }
+            }
+        }
+        return nil
     }
 }

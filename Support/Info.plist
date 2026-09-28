@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Vibhor's Notch shows your upcoming calendar events on its home screen.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Vibhor's Notch controls Spotify playback from the notch.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Vibhor's Notch shows your upcoming calendar events on its home screen.</string>
 </dict>

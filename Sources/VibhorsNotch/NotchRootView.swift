@@ -32,11 +32,14 @@ struct NotchShape: Shape {
 
 struct NotchRootView: View {
     @EnvironmentObject var vm: NotchViewModel
+    @EnvironmentObject var focus: FocusTimer
 
     var body: some View {
+        let showLiveActivity = !vm.isExpanded && focus.isActive
         let topR: CGFloat = vm.isExpanded ? 18 : 6
         let bottomR: CGFloat = vm.isExpanded ? 32 : 10
-        let width = vm.isExpanded ? vm.expandedSize.width : vm.notchSize.width + topR * 2
+        let collapsedWidth = vm.notchSize.width + (showLiveActivity ? NotchViewModel.liveActivityEarWidth * 2 : 0)
+        let width = vm.isExpanded ? vm.expandedSize.width : collapsedWidth + topR * 2
         let height = vm.isExpanded ? vm.expandedSize.height : vm.notchSize.height
         let shape = NotchShape(topRadius: topR, bottomRadius: bottomR)
 
@@ -52,9 +55,15 @@ struct NotchRootView: View {
                     .frame(width: width, height: height, alignment: .top)
                     .clipShape(shape)
                     .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .top)))
+            } else if showLiveActivity {
+                FocusLiveActivity(notchWidth: vm.notchSize.width)
+                    .padding(.horizontal, topR)
+                    .frame(width: width, height: height)
+                    .transition(.opacity)
             }
         }
         .frame(width: width, height: height)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showLiveActivity)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
     }
@@ -69,6 +78,9 @@ struct ExpandedView: View {
             Group {
                 switch vm.tab {
                 case .home: HomeView()
+                case .media: MediaView()
+                case .tasks: TasksView()
+                case .focus: FocusView()
                 case .notes: NotesView()
                 case .shelf: ShelfView()
                 case .prompter: PrompterView()
@@ -84,14 +96,14 @@ struct ExpandedView: View {
     /// Tabs on the left ear, controls on the right ear, camera in the middle.
     private var header: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 4) {
+            HStack(spacing: 2) {
                 ForEach(NotchTab.allCases) { tab in
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) { vm.tab = tab }
                     } label: {
                         Image(systemName: tab.icon)
                             .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 30, height: 24)
+                            .frame(width: 28, height: 24)
                             .background(
                                 RoundedRectangle(cornerRadius: 7)
                                     .fill(Color.white.opacity(vm.tab == tab ? 0.16 : 0))
