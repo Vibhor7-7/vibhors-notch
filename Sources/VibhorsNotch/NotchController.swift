@@ -20,6 +20,7 @@ final class NotchController {
     let spotify = SpotifyController()
     let tasks = TaskStore()
     let focus = FocusTimer()
+    let apollo = ApolloClient()
 
     private let panel: NotchPanel
     private var screen: NSScreen?
@@ -60,12 +61,23 @@ final class NotchController {
             .environmentObject(spotify)
             .environmentObject(tasks)
             .environmentObject(focus)
+            .environmentObject(apollo)
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         panel.contentView = hosting
 
         vm.requestCollapse = { [weak self] in self?.collapse() }
         focus.onPhaseComplete = { [weak self] _ in self?.popOpen(to: .focus) }
+        apollo.onApprovalRequest = { [weak self] in self?.popOpen(to: .assistant, for: 3) }
+        apollo.onAddTask = { [weak self] title in self?.tasks.add(title) }
+        apollo.onStartFocus = { [weak self] minutes in
+            guard let self else { return }
+            self.focus.select(.focus)
+            self.focus.reset()
+            self.focus.focusMinutes = minutes
+            self.focus.start()
+        }
+        apollo.start()
 
         layout()
         installMonitors()
@@ -101,7 +113,7 @@ final class NotchController {
     private var collapsedHitRect: NSRect {
         guard let s = screen else { return .zero }
         let n = vm.notchSize
-        let ears = focus.isActive ? NotchViewModel.liveActivityEarWidth : 0
+        let ears = focus.isActive || apollo.showsLiveActivity ? NotchViewModel.liveActivityEarWidth : 0
         return NSRect(x: s.frame.midX - n.width / 2 - ears - 10, y: s.frame.maxY - n.height - 4,
                       width: n.width + ears * 2 + 20, height: n.height + 4)
     }
@@ -115,7 +127,7 @@ final class NotchController {
 
     /// Keep the notch open while typing, pinned, or reading the teleprompter.
     private var shouldStayOpen: Bool {
-        vm.isPinned || vm.prompterPlaying
+        vm.isPinned || vm.prompterPlaying || !apollo.approvals.isEmpty
             || (panel.isKeyWindow && panel.firstResponder is NSTextView)
             || (holdOpenUntil.map { Date() < $0 } ?? false)
     }
@@ -137,7 +149,8 @@ final class NotchController {
         // A click anywhere outside the notch (global monitor = other apps) closes it.
         if let m = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown], handler: { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.vm.isExpanded, !self.vm.isPinned, !self.vm.prompterPlaying else { return }
+                guard let self, self.vm.isExpanded, !self.vm.isPinned, !self.vm.prompterPlaying,
+                      self.apollo.approvals.isEmpty else { return }
                 self.collapse()
             }
         }) { monitors.append(m) }

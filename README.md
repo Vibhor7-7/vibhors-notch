@@ -4,6 +4,7 @@ A personal Dynamic-Island-style app for the MacBook notch. Hover over the notch 
 
 ## Tabs
 - **Home**: clock, date, battery, and calendar events for today and tomorrow. Events with a Zoom, Meet, Teams or Webex link get a **Join** button, which turns green 10 minutes before the meeting starts.
+- **Apollo** (✨): voice assistant panel for [apollo-assistant](../apollo-assistant). Hold **right ⌘** to talk, hold **Fn** anywhere to dictate. Shows the transcript, running tasks and approval cards. The closed notch shows Listening, Thinking, Speaking or Dictating.
 - **Music**: Spotify now playing, with album art, play/pause, previous/next, seek bar, shuffle, repeat and volume (via AppleScript)
 - **Tasks**: type a task and press Return, then tick the checkbox to complete it. Double-click a task to rename it. Completed tasks collapse into their own section.
 - **Notes**: create, edit and delete notes (autosaved)

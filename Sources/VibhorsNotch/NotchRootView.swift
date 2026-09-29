@@ -33,9 +33,11 @@ struct NotchShape: Shape {
 struct NotchRootView: View {
     @EnvironmentObject var vm: NotchViewModel
     @EnvironmentObject var focus: FocusTimer
+    @EnvironmentObject var apollo: ApolloClient
 
     var body: some View {
-        let showLiveActivity = !vm.isExpanded && focus.isActive
+        let showApollo = !vm.isExpanded && apollo.showsLiveActivity
+        let showLiveActivity = !vm.isExpanded && (focus.isActive || apollo.showsLiveActivity)
         let topR: CGFloat = vm.isExpanded ? 18 : 6
         let bottomR: CGFloat = vm.isExpanded ? 32 : 10
         let collapsedWidth = vm.notchSize.width + (showLiveActivity ? NotchViewModel.liveActivityEarWidth * 2 : 0)
@@ -55,6 +57,11 @@ struct NotchRootView: View {
                     .frame(width: width, height: height, alignment: .top)
                     .clipShape(shape)
                     .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .top)))
+            } else if showApollo {
+                ApolloLiveActivity(notchWidth: vm.notchSize.width)
+                    .padding(.horizontal, topR)
+                    .frame(width: width, height: height)
+                    .transition(.opacity)
             } else if showLiveActivity {
                 FocusLiveActivity(notchWidth: vm.notchSize.width)
                     .padding(.horizontal, topR)
@@ -78,6 +85,7 @@ struct ExpandedView: View {
             Group {
                 switch vm.tab {
                 case .home: HomeView()
+                case .assistant: AssistantView()
                 case .media: MediaView()
                 case .tasks: TasksView()
                 case .focus: FocusView()
@@ -103,7 +111,7 @@ struct ExpandedView: View {
                     } label: {
                         Image(systemName: tab.icon)
                             .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 28, height: 24)
+                            .frame(width: 26, height: 24)
                             .background(
                                 RoundedRectangle(cornerRadius: 7)
                                     .fill(Color.white.opacity(vm.tab == tab ? 0.16 : 0))
