@@ -108,6 +108,7 @@ final class ApolloClient: ObservableObject {
     // Whether the push-to-talk key is still down (mic permission can answer after release).
     private var assistantHeld = false
     private var dictationHeld = false
+    private var dictationBytes = 0
 
     private static let port = UserDefaults.standard.object(forKey: "apollo.port") as? Int ?? 8765
     private static let tokenURL = FileManager.default.homeDirectoryForCurrentUser
@@ -146,7 +147,8 @@ final class ApolloClient: ObservableObject {
     }
 
     func start() {
-        _ = HotkeyMonitor.ensureAccessibility(prompt: true)
+        let trusted = HotkeyMonitor.ensureAccessibility(prompt: true)
+        NSLog("Apollo: Accessibility trusted = \(trusted)")
         hotkeys.start()
         connect()
     }
@@ -222,7 +224,11 @@ final class ApolloClient: ObservableObject {
             guard granted else { return self.showError("Microphone access is off for Vibhor's Notch.") }
             self.send(["type": "dictation.start"])
             do {
-                try self.audio.startCapture { [weak self] pcm in self?.sendAudio(.dictationMic, pcm) }
+                self.dictationBytes = 0
+                try self.audio.startCapture { [weak self] pcm in
+                    self?.dictationBytes += pcm.count
+                    self?.sendAudio(.dictationMic, pcm)
+                }
                 self.dictation = .recording
             } catch {
                 self.send(["type": "dictation.cancel"])
@@ -234,6 +240,7 @@ final class ApolloClient: ObservableObject {
     func stopDictation(cancel: Bool = false) {
         dictationHeld = false
         guard dictation == .recording else { return }
+        NSLog("Apollo dictation: stop (cancel=\(cancel)), sent \(dictationBytes) bytes of audio")
         audio.stopCapture()
         send(["type": cancel ? "dictation.cancel" : "dictation.stop"])
         dictation = cancel ? .idle : .transcribing
@@ -328,6 +335,9 @@ final class ApolloClient: ObservableObject {
             reconnectDelay = 1
             serverState = msg["status"] as? String ?? "idle"
             composioReady = msg["composio"] as? Bool ?? false
+            // A (re)started server numbers tasks from 1 again and has no pending approvals.
+            tasks.removeAll()
+            approvals.removeAll()
 
         case "status":
             serverState = msg["state"] as? String ?? "idle"
@@ -384,7 +394,17 @@ final class ApolloClient: ObservableObject {
             dictation = DictationState(rawValue: msg["state"] as? String ?? "idle") ?? .idle
 
         case "dictation.result":
-            if let text = msg["text"] as? String, !text.isEmpty { TextInserter.insert(text) }
+            guard let text = msg["text"] as? String, !text.isEmpty else { return }
+            if HotkeyMonitor.ensureAccessibility(prompt: false) {
+                NSLog("Apollo dictation: inserting \(text.count) characters")
+                TextInserter.insert(text)
+            } else {
+                // Without Accessibility we can't paste; leave the text on the clipboard instead.
+                NSLog("Apollo dictation: not trusted for Accessibility; copied to clipboard")
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+                showError("Dictation copied to clipboard. Allow Vibhor's Notch in Accessibility settings to paste automatically.")
+            }
 
         case "dictation.error":
             showError("Dictation failed: \(msg["message"] as? String ?? "unknown error")")

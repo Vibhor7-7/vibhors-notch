@@ -17,7 +17,15 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/$EXEC" "$APP/Contents/MacOS/$EXEC"
 cp Support/Info.plist "$APP/Contents/Info.plist"
-codesign --force --sign - "$APP" >/dev/null
+# Sign with the stable local identity (scripts/setup-signing.sh) so macOS keeps the app's
+# Accessibility/Microphone permissions across rebuilds; fall back to ad-hoc signing.
+IDENTITY="Vibhor Notch Local Signing"
+if security find-certificate -c "$IDENTITY" >/dev/null 2>&1; then
+  codesign --force --sign "$IDENTITY" "$APP" >/dev/null 2>&1
+else
+  echo "warning: no '$IDENTITY' identity; run scripts/setup-signing.sh so permissions survive rebuilds"
+  codesign --force --sign - "$APP" >/dev/null
+fi
 
 echo "Built $APP"
 
@@ -29,7 +37,8 @@ case "${1:-}" in
   --install)
     pkill -x "$EXEC" 2>/dev/null || true
     rm -rf "/Applications/$APP_NAME.app"
-    cp -R "$APP" "/Applications/"
+    # Move rather than copy so there's only ever one copy of the app to launch.
+    mv "$APP" "/Applications/"
     open "/Applications/$APP_NAME.app"
     echo "Installed to /Applications/$APP_NAME.app"
     ;;
