@@ -384,7 +384,12 @@ final class ApolloClient: ObservableObject {
         case "link":
             guard let url = msg["url"] as? String else { return }
             let link = ApolloLink(title: msg["title"] as? String ?? "Open link", url: url)
-            if !links.contains(link) { links.append(link) }
+            links.removeAll { $0.title == link.title } // a newer link for the same app replaces the old one
+            links.append(link)
+            // Composio sign-in links expire after 10 minutes; don't leave dead buttons behind.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 600) { [weak self] in
+                self?.links.removeAll { $0 == link }
+            }
             onApprovalRequest?() // surface it the same way
 
         case "audio.interrupt":

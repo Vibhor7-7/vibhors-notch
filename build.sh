@@ -21,7 +21,11 @@ cp Support/Info.plist "$APP/Contents/Info.plist"
 # Accessibility/Microphone permissions across rebuilds; fall back to ad-hoc signing.
 IDENTITY="Vibhor Notch Local Signing"
 if security find-certificate -c "$IDENTITY" >/dev/null 2>&1; then
-  codesign --force --sign "$IDENTITY" "$APP" >/dev/null 2>&1
+  if ! SIGN_OUT="$(codesign --force --sign "$IDENTITY" "$APP" 2>&1)"; then
+    echo "error: code signing failed (is the login keychain locked?):" >&2
+    echo "$SIGN_OUT" >&2
+    exit 1
+  fi
 else
   echo "warning: no '$IDENTITY' identity; run scripts/setup-signing.sh so permissions survive rebuilds"
   codesign --force --sign - "$APP" >/dev/null
