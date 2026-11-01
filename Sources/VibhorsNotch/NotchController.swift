@@ -21,6 +21,7 @@ final class NotchController {
     let tasks = TaskStore()
     let focus = FocusTimer()
     let apollo = ApolloClient()
+    let system = SystemMonitor()
 
     private let panel: NotchPanel
     private var screen: NSScreen?
@@ -62,6 +63,7 @@ final class NotchController {
             .environmentObject(tasks)
             .environmentObject(focus)
             .environmentObject(apollo)
+            .environmentObject(system)
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         panel.contentView = hosting
@@ -113,7 +115,8 @@ final class NotchController {
     private var collapsedHitRect: NSRect {
         guard let s = screen else { return .zero }
         let n = vm.notchSize
-        let ears = focus.isActive || apollo.showsLiveActivity ? NotchViewModel.liveActivityEarWidth : 0
+        let showsEars = focus.isActive || apollo.showsLiveActivity || vm.showSystemStatsInNotch
+        let ears = showsEars ? NotchViewModel.liveActivityEarWidth : 0
         return NSRect(x: s.frame.midX - n.width / 2 - ears - 10, y: s.frame.maxY - n.height - 4,
                       width: n.width + ears * 2 + 20, height: n.height + 4)
     }

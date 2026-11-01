@@ -10,6 +10,7 @@ A personal Dynamic-Island-style app for the MacBook notch. Hover over the notch 
 - **Notes**: create, edit and delete notes (autosaved)
 - **Shelf**: drop files to keep them handy, then drag them back out, double-click to open, or right-click for more options. Dragging a file onto the closed notch opens the shelf.
 - **Focus**: Pomodoro timer with adjustable focus and break lengths. While a session is running the countdown shows beside the closed notch, and when a session ends it plays a chime and briefly opens the notch.
+- **System**: live CPU and GPU load with one-minute graphs (hover a graph to read past values). Shows user and system CPU time, a meter for each efficiency and performance core, and GPU memory in use. Turn on **Show in closed notch** to keep CPU and GPU % beside the camera. Apollo and the focus countdown take that spot while they're active.
 - **Teleprompter**: paste a script, press Start, and it scrolls right under the camera. Space plays or pauses, and you can drag the text to scrub. Speed and font size are adjustable.
 
 ## Behaviour

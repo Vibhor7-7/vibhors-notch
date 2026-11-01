@@ -37,7 +37,8 @@ struct NotchRootView: View {
 
     var body: some View {
         let showApollo = !vm.isExpanded && apollo.showsLiveActivity
-        let showLiveActivity = !vm.isExpanded && (focus.isActive || apollo.showsLiveActivity)
+        let showLiveActivity = !vm.isExpanded
+            && (focus.isActive || apollo.showsLiveActivity || vm.showSystemStatsInNotch)
         let topR: CGFloat = vm.isExpanded ? 18 : 6
         let bottomR: CGFloat = vm.isExpanded ? 32 : 10
         let collapsedWidth = vm.notchSize.width + (showLiveActivity ? NotchViewModel.liveActivityEarWidth * 2 : 0)
@@ -62,8 +63,13 @@ struct NotchRootView: View {
                     .padding(.horizontal, topR)
                     .frame(width: width, height: height)
                     .transition(.opacity)
-            } else if showLiveActivity {
+            } else if showLiveActivity && focus.isActive {
                 FocusLiveActivity(notchWidth: vm.notchSize.width)
+                    .padding(.horizontal, topR)
+                    .frame(width: width, height: height)
+                    .transition(.opacity)
+            } else if showLiveActivity {
+                SystemLiveActivity(notchWidth: vm.notchSize.width)
                     .padding(.horizontal, topR)
                     .frame(width: width, height: height)
                     .transition(.opacity)
@@ -89,6 +95,7 @@ struct ExpandedView: View {
                 case .media: MediaView()
                 case .tasks: TasksView()
                 case .focus: FocusView()
+                case .system: SystemView()
                 case .notes: NotesView()
                 case .shelf: ShelfView()
                 case .prompter: PrompterView()

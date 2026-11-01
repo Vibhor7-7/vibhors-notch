@@ -2,7 +2,7 @@ import SwiftUI
 import ServiceManagement
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, assistant, media, tasks, notes, shelf, focus, prompter
+    case home, assistant, media, tasks, notes, shelf, focus, system, prompter
 
     var id: String { rawValue }
 
@@ -13,6 +13,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .media: "music.note"
         case .tasks: "checklist"
         case .focus: "timer"
+        case .system: "cpu"
         case .notes: "note.text"
         case .shelf: "tray.full.fill"
         case .prompter: "text.aligncenter"
@@ -26,6 +27,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .media: "Music"
         case .tasks: "Tasks"
         case .focus: "Focus Timer"
+        case .system: "System"
         case .notes: "Notes"
         case .shelf: "Shelf"
         case .prompter: "Teleprompter"
@@ -39,6 +41,10 @@ final class NotchViewModel: ObservableObject {
     @Published var isPinned = false
     @Published var prompterPlaying = false
     @Published var notchSize = CGSize(width: 190, height: 32)
+    /// Show CPU and GPU load beside the closed notch.
+    @Published var showSystemStatsInNotch = UserDefaults.standard.bool(forKey: "system.showInNotch") {
+        didSet { UserDefaults.standard.set(showSystemStatsInNotch, forKey: "system.showInNotch") }
+    }
 
     let expandedSize = CGSize(width: 760, height: 290)
 
