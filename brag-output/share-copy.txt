@@ -1,0 +1,1 @@
+My MacBook notch shows live CPU and GPU load now. Hover it for per-core meters and GPU memory, close it and the numbers stay by the camera, all for 24 µs of CPU a second. github.com/Vibhor7-7/vibhors-notch
